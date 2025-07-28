@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast & Furious Car Wash</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #d35400;
+            text-align: center;
+        }
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #d35400;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #e67e22;
+        }
+        #payment-section {
+            display: none;
+            margin-top: 20px;
+        }
+        .logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">FAST & FURIOUS CAR WASH</div>
+    <h1>Book Your Car Wash</h1>
+    
+    <div class="form-container">
+        <form id="booking-form">
+            <input type="text" id="name" placeholder="Your Name" required>
+            <input type="tel" id="mobile" placeholder="Mobile Number" required>
+            <input type="text" id="car" placeholder="Car Model" required>
+            <button type="button" id="book-btn">Book Appointment</button>
+        </form>
+        
+        <div id="payment-section">
+            <h3>Complete Your Booking</h3>
+            <input type="date" id="pickup-date" required>
+            <input type="text" id="address" placeholder="Pickup Address" required>
+            <p>Amount to Pay: ₹100</p>
+            <button type="button" id="pay-btn">Pay Now</button>
+        </div>
+    </div>
+
+    <script>
+        // Book Appointment Button Handler
+        document.getElementById('book-btn').addEventListener('click', function() {
+            const name = document.getElementById('name').value;
+            const mobile = document.getElementById('mobile').value;
+            const car = document.getElementById('car').value;
+            
+            if (name && mobile && car) {
+                document.getElementById('booking-form').style.display = 'none';
+                document.getElementById('payment-section').style.display = 'block';
+            } else {
+                alert('Please fill all fields');
+            }
+        });
+
+        // Pay Now Button Handler
+        document.getElementById('pay-btn').addEventListener('click', async function() {
+            const bookingData = {
+                name: document.getElementById('name').value,
+                mobile: document.getElementById('mobile').value,
+                car: document.getElementById('car').value,
+                date: document.getElementById('pickup-date').value,
+                address: document.getElementById('address').value,
+                amount: 100,
+                status: 'pending'
+            };
+
+            try {
+                // Create order on your server
+                const orderResponse = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 100 })
+                });
+                
+                const order = await orderResponse.json();
+                
+                const options = {
+                    key: 'YOUR_RAZORPAY_KEY',  // Replace with your actual key
+                    amount: order.amount,
+                    currency: 'INR',
+                    name: 'Fast & Furious Car Wash',
+                    description: 'Car Wash Service',
+                    order_id: order.id,
+                    handler: async function(response) {
+                        // Save booking after payment
+                        bookingData.status = 'paid';
+                        const saveResponse = await fetch('/api/bookings', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(bookingData)
+                        });
+                        
+                        if (saveResponse.ok) {
+                            alert('Payment successful! Booking confirmed.');
+                            window.location.reload();
+                        } else {
+                            alert('Booking saved but payment verification failed');
+                        }
+                    },
+                    prefill: {
+                        name: bookingData.name,
+                        contact: bookingData.mobile
+                    },
+                    theme: {
+                        color: '#d35400'
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.open();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Payment processing failed. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
