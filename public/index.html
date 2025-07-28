@@ -103,52 +103,84 @@
 
             try {
                 // Create order on your server
-                const orderResponse = await fetch('/api/create-order', {
+                const orderResponse = await fetch('http://localhost:3000/api/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: 100 })
+                    body: JSON.stringify({ amount: bookingData.amount })
                 });
                 
-                const order = await orderResponse.json();
+                if (!orderResponse.ok) {
+                    throw new Error('Failed to create order: ' + await orderResponse.text());
+                }
                 
+                const order = await orderResponse.json();
+                console.log("Order created:", order);
+
                 const options = {
-                    key: 'rzp_test_fvTsRApN9CLJ59',  // Replace with your actual key
+                    key: 'rzp_test_fvTsRApN9CLJ59',
                     amount: order.amount,
-                    currency: 'INR',
+                    currency: order.currency,
+                    order_id: order.id,
                     name: 'Fast & Furious Car Wash',
                     description: 'Car Wash Service',
-                    order_id: order.id,
                     handler: async function(response) {
-                        // Save booking after payment
-                        bookingData.status = 'paid';
-                        const saveResponse = await fetch('/api/bookings', {
+                        console.log("Payment response:", response);
+                        
+                        // Verify payment
+                        const verificationResponse = await fetch('http://localhost:3000/api/verify-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(bookingData)
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
                         });
                         
-                        if (saveResponse.ok) {
-                            alert('Payment successful! Booking confirmed.');
-                            window.location.reload();
+                        const verification = await verificationResponse.json();
+                        
+                        if (verification.success) {
+                            // Save booking
+                            bookingData.status = 'paid';
+                            bookingData.payment_id = response.razorpay_payment_id;
+                            
+                            const saveResponse = await fetch('http://localhost:3000/api/bookings', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(bookingData)
+                            });
+                            
+                            if (saveResponse.ok) {
+                                alert('Payment successful! Booking confirmed.');
+                                window.location.reload();
+                            } else {
+                                alert('Booking saved but confirmation failed');
+                            }
                         } else {
-                            alert('Booking saved but payment verification failed');
+                            alert('Payment verification failed');
                         }
                     },
                     prefill: {
                         name: bookingData.name,
-                        contact: bookingData.mobile
+                        contact: bookingData.mobile,
+                        email: 'customer@example.com'
                     },
                     theme: {
                         color: '#d35400'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            alert('Payment window closed');
+                        }
                     }
                 };
-                
+
                 const rzp = new Razorpay(options);
                 rzp.open();
                 
             } catch (error) {
-                console.error('Error:', error);
-                alert('Payment processing failed. Please try again.');
+                console.error('Payment error:', error);
+                alert('Payment failed: ' + error.message);
             }
         });
     </script>
