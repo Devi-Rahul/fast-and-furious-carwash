@@ -6,7 +6,6 @@
     <title>Fast & Furious Car Wash</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
-        /* Your existing CSS remains the same */
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
@@ -14,7 +13,44 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
-        /* ... rest of your CSS ... */
+        h1 {
+            color: #d35400;
+            text-align: center;
+        }
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #d35400;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #e67e22;
+        }
+        #payment-section {
+            display: none;
+            margin-top: 20px;
+        }
+        .logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -39,7 +75,7 @@
     </div>
 
     <script>
-        // Book Appointment Button Handler
+        // Book Appointment Button
         document.getElementById('book-btn').addEventListener('click', function() {
             const name = document.getElementById('name').value;
             const mobile = document.getElementById('mobile').value;
@@ -53,55 +89,43 @@
             }
         });
 
-        // Pay Now Button Handler - Modified for frontend-only testing
-        document.getElementById('pay-btn').addEventListener('click', async function() {
-            const bookingData = {
-                name: document.getElementById('name').value,
-                mobile: document.getElementById('mobile').value,
-                car: document.getElementById('car').value,
-                date: document.getElementById('pickup-date').value,
-                address: document.getElementById('address').value,
-                amount: 100,
-                status: 'paid' // Marking as paid directly for testing
-            };
-
-            try {
-                // For testing without backend, we'll simulate a successful payment
-                const options = {
-                    key: 'rzp_test_fvTsRApN9CLJ59', // Your test key
-                    amount: 10000, // ₹100 in paise
-                    currency: 'INR',
-                    name: 'Fast & Furious Car Wash',
-                    description: 'Car Wash Service',
-                    order_id: 'order_' + Math.random().toString(36).substr(2, 9), // Random order ID
-                    handler: function(response) {
-                        // For testing, we'll just show the booking data
-                        console.log("Booking Data:", bookingData);
-                        console.log("Payment Response:", response);
-                        alert('Payment successful! Booking confirmed.\n(Note: This is a frontend-only demo)');
-                        window.location.reload();
-                    },
-                    prefill: {
-                        name: bookingData.name,
-                        contact: bookingData.mobile,
-                        email: 'customer@example.com'
-                    },
-                    theme: {
-                        color: '#d35400'
+        // Pay Now Button
+        document.getElementById('pay-btn').addEventListener('click', function() {
+            const options = {
+                key: 'rzp_test_fvTsRApN9CLJ59', // Replace with your test key
+                amount: 10000, // ₹100 in paise
+                currency: 'INR',
+                name: 'Fast & Furious Car Wash',
+                description: 'Car Wash Service',
+                handler: function(response) {
+                    alert('Payment successful! ID: ' + response.razorpay_payment_id);
+                    console.log('Payment details:', {
+                        name: document.getElementById('name').value,
+                        mobile: document.getElementById('mobile').value,
+                        car: document.getElementById('car').value,
+                        date: document.getElementById('pickup-date').value,
+                        address: document.getElementById('address').value,
+                        payment_id: response.razorpay_payment_id
+                    });
+                    window.location.reload();
+                },
+                prefill: {
+                    name: document.getElementById('name').value,
+                    contact: document.getElementById('mobile').value,
+                    email: 'customer@example.com'
+                },
+                theme: {
+                    color: '#d35400'
+                },
+                modal: {
+                    ondismiss: function() {
+                        alert('Payment cancelled');
                     }
-                };
-
-                const rzp = new Razorpay(options);
-                rzp.open();
-
-                // In a real implementation, you would save bookingData to your backend here
-                // For now, we'll just log it to console
-                console.log("Booking would be saved:", bookingData);
-
-            } catch (error) {
-                console.error("Payment error:", error);
-                alert('Payment failed: ' + error.message);
-            }
+                }
+            };
+            
+            const rzp = new Razorpay(options);
+            rzp.open();
         });
     </script>
 </body>
