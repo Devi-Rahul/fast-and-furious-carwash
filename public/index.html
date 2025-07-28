@@ -51,6 +51,12 @@
             font-weight: bold;
             margin-bottom: 20px;
         }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -68,14 +74,16 @@
         <div id="payment-section">
             <h3>Complete Your Booking</h3>
             <input type="date" id="pickup-date" required>
+            <div id="date-error" class="error"></div>
             <input type="text" id="address" placeholder="Pickup Address" required>
+            <div id="address-error" class="error"></div>
             <p>Amount to Pay: ₹100</p>
             <button type="button" id="pay-btn">Pay Now</button>
         </div>
     </div>
 
     <script>
-        // Book Appointment Button
+        // Book Appointment Button Handler
         document.getElementById('book-btn').addEventListener('click', function() {
             const name = document.getElementById('name').value;
             const mobile = document.getElementById('mobile').value;
@@ -89,43 +97,67 @@
             }
         });
 
-        // Pay Now Button
+        // Pay Now Button Handler
         document.getElementById('pay-btn').addEventListener('click', function() {
-            const options = {
-                key: 'rzp_test_fvTsRApN9CLJ59', // Replace with your test key
-                amount: 10000, // ₹100 in paise
-                currency: 'INR',
-                name: 'Fast & Furious Car Wash',
-                description: 'Car Wash Service',
-                handler: function(response) {
-                    alert('Payment successful! ID: ' + response.razorpay_payment_id);
-                    console.log('Payment details:', {
-                        name: document.getElementById('name').value,
-                        mobile: document.getElementById('mobile').value,
-                        car: document.getElementById('car').value,
-                        date: document.getElementById('pickup-date').value,
-                        address: document.getElementById('address').value,
-                        payment_id: response.razorpay_payment_id
-                    });
-                    window.location.reload();
-                },
-                prefill: {
-                    name: document.getElementById('name').value,
-                    contact: document.getElementById('mobile').value,
-                    email: 'customer@example.com'
-                },
-                theme: {
-                    color: '#d35400'
-                },
-                modal: {
-                    ondismiss: function() {
-                        alert('Payment cancelled');
-                    }
-                }
-            };
+            // Clear previous errors
+            document.getElementById('date-error').textContent = '';
+            document.getElementById('address-error').textContent = '';
             
-            const rzp = new Razorpay(options);
-            rzp.open();
+            // Get values
+            const pickupDate = document.getElementById('pickup-date').value;
+            const address = document.getElementById('address').value;
+            let isValid = true;
+            
+            // Validate date
+            if (!pickupDate) {
+                document.getElementById('date-error').textContent = 'Please select a pickup date';
+                isValid = false;
+            }
+            
+            // Validate address
+            if (!address) {
+                document.getElementById('address-error').textContent = 'Please enter pickup address';
+                isValid = false;
+            }
+            
+            // Only proceed if validation passes
+            if (isValid) {
+                const options = {
+                    key: 'rzp_test_fvTsRApN9CLJ59', // Replace with your test key
+                    amount: 10000, // ₹100 in paise
+                    currency: 'INR',
+                    name: 'Fast & Furious Car Wash',
+                    description: 'Car Wash Service',
+                    handler: function(response) {
+                        alert('Payment successful! ID: ' + response.razorpay_payment_id);
+                        console.log('Booking details:', {
+                            name: document.getElementById('name').value,
+                            mobile: document.getElementById('mobile').value,
+                            car: document.getElementById('car').value,
+                            date: pickupDate,
+                            address: address,
+                            payment_id: response.razorpay_payment_id
+                        });
+                        window.location.reload();
+                    },
+                    prefill: {
+                        name: document.getElementById('name').value,
+                        contact: document.getElementById('mobile').value,
+                        email: 'customer@example.com'
+                    },
+                    theme: {
+                        color: '#d35400'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            alert('Payment cancelled');
+                        }
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.open();
+            }
         });
     </script>
 </body>
