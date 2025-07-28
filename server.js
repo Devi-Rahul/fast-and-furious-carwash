@@ -64,8 +64,8 @@ app.get('/api/bookings', async (req, res) => {
 
 const Razorpay = require('razorpay');
 const razorpay = new Razorpay({
-  key_id: 'YOUR_RAZORPAY_KEY',
-  key_secret: 'YOUR_RAZORPAY_SECRET'
+  key_id: 'rzp_test_fvTsRApN9CLJ59',
+  key_secret: 'ntHIm7ni9lKTJYjL8zvmLER9'
 });
 
 app.post('/api/create-order', async (req, res) => {
