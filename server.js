@@ -62,26 +62,44 @@ app.get('/api/bookings', async (req, res) => {
 
 
 
+// const Razorpay = require('razorpay');
+// const razorpay = new Razorpay({
+//   key_id: 'rzp_test_fvTsRApN9CLJ59',
+//   key_secret: 'ntHIm7ni9lKTJYjL8zvmLER9'
+// });
+
+// app.post('/api/create-order', async (req, res) => {
+//   try {
+//     const options = {
+//       amount: req.body.amount * 100, // Razorpay expects paise
+//       currency: 'INR'
+//     };
+//     const order = await razorpay.orders.create(options);
+//     res.send(order);
+//   } catch (err) {
+//     res.status(500).send(err);
+//   }
+// });
+
+// In server.js
 const Razorpay = require('razorpay');
 const razorpay = new Razorpay({
-  key_id: 'rzp_test_fvTsRApN9CLJ59',
-  key_secret: 'ntHIm7ni9lKTJYjL8zvmLER9'
+  key_id: 'YOUR_KEY_ID',
+  key_secret: 'YOUR_KEY_SECRET'
 });
 
 app.post('/api/create-order', async (req, res) => {
   try {
     const options = {
-      amount: req.body.amount * 100, // Razorpay expects paise
+      amount: req.body.amount * 100, // Razorpay expects amount in paise
       currency: 'INR'
     };
     const order = await razorpay.orders.create(options);
-    res.send(order);
+    res.json(order);
   } catch (err) {
     res.status(500).send(err);
   }
 });
-
-
 
 
 
