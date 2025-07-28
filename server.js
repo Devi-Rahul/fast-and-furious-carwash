@@ -17,9 +17,11 @@ app.use(express.static('public'));
 // MongoDB Connection
 const connectDB = async () => {
     try {
-        await mongoose.connect('mongodb+srv://rahulbanoth:rahul1661@rahul7.g2y3a30.mongodb.net/carwash', {
-            serverSelectionTimeoutMS: 5000
-        });
+        await mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000
+});
+
+        
         console.log('MongoDB connected successfully');
     } catch (err) {
         console.error('MongoDB connection error:', err.message);
@@ -29,9 +31,10 @@ const connectDB = async () => {
 
 // Razorpay Configuration
 const razorpay = new Razorpay({
-    key_id: 'rzp_test_fvTsRApN9CLJ59',
-    key_secret: 'ntHIm7ni9lKTJYjL8zvmLER9'
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
 });
+
 
 // Booking Schema
 const bookingSchema = new mongoose.Schema({
