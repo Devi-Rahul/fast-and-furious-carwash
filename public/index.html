@@ -75,107 +75,114 @@
     </div>
 
     <script>
-        document.getElementById('pay-btn').addEventListener('click', async function() {
-  const bookingData = {
-    name: document.getElementById('name').value,
-    mobile: document.getElementById('mobile').value,
-    car: document.getElementById('car').value,
-    date: document.getElementById('pickup-date').value,
-    address: document.getElementById('address').value,
-    amount: 100,
-    status: 'pending'
-  };
-
-  try {
-    console.log("1. Creating order...");
-    const orderResponse = await fetch('/api/create-order', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ amount: bookingData.amount })
-    });
-    
-    console.log("2. Order response received");
-    
-    if (!orderResponse.ok) {
-      const errorDetails = await orderResponse.json();
-      console.error("3. Order failed:", errorDetails);
-      throw new Error(errorDetails.error || 'Order creation failed');
-    }
-    
-    const order = await orderResponse.json();
-    console.log("4. Order created:", order);
-
-    const options = {
-      key: 'rzp_test_fvTsRApN9CLJ59',
-      amount: order.amount,
-      currency: order.currency,
-      order_id: order.id,
-      name: 'Fast & Furious Car Wash',
-      description: 'Car Wash Service',
-      handler: async function(response) {
-        console.log("5. Payment response:", response);
-        
-        try {
-          const verificationResponse = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature
-            })
-          });
-          
-          const verification = await verificationResponse.json();
-          console.log("6. Verification result:", verification);
-          
-          if (verification.success) {
-            bookingData.status = 'paid';
-            bookingData.payment_id = response.razorpay_payment_id;
+        // Book Appointment Button Handler
+        document.getElementById('book-btn').addEventListener('click', function() {
+            const name = document.getElementById('name').value;
+            const mobile = document.getElementById('mobile').value;
+            const car = document.getElementById('car').value;
             
-            const saveResponse = await fetch('/api/bookings', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(bookingData)
-            });
-            
-            console.log("7. Save response:", saveResponse);
-            
-            if (saveResponse.ok) {
-              alert('Payment successful! Booking confirmed.');
-              window.location.reload();
+            if (name && mobile && car) {
+                document.getElementById('booking-form').style.display = 'none';
+                document.getElementById('payment-section').style.display = 'block';
             } else {
-              alert('Booking saved but confirmation failed');
+                alert('Please fill all fields');
             }
-          } else {
-            alert('Payment verification failed');
-          }
-        } catch (verifyError) {
-          console.error("Verification error:", verifyError);
-          alert('Payment verification error');
-        }
-      },
-      prefill: {
-        name: bookingData.name,
-        contact: bookingData.mobile,
-        email: 'customer@example.com'
-      },
-      theme: {
-        color: '#d35400'
-      }
-    };
+        });
 
-    const rzp = new Razorpay(options);
-    rzp.open();
-    
-  } catch (error) {
-    console.error("Payment process failed:", {
-      error: error.message,
-      stack: error.stack
-    });
-    alert('Payment failed: ' + error.message);
-  }
-});
+        // Pay Now Button Handler
+        document.getElementById('pay-btn').addEventListener('click', async function() {
+            const bookingData = {
+                name: document.getElementById('name').value,
+                mobile: document.getElementById('mobile').value,
+                car: document.getElementById('car').value,
+                date: document.getElementById('pickup-date').value,
+                address: document.getElementById('address').value,
+                amount: 100,
+                status: 'pending'
+            };
+
+            try {
+                // Create order on your server
+                const orderResponse = await fetch('http://localhost:3000/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: bookingData.amount })
+                });
+                
+                if (!orderResponse.ok) {
+                    throw new Error('Failed to create order: ' + await orderResponse.text());
+                }
+                
+                const order = await orderResponse.json();
+                console.log("Order created:", order);
+
+                const options = {
+                    key: 'rzp_test_fvTsRApN9CLJ59',
+                    amount: order.amount,
+                    currency: order.currency,
+                    order_id: order.id,
+                    name: 'Fast & Furious Car Wash',
+                    description: 'Car Wash Service',
+                    handler: async function(response) {
+                        console.log("Payment response:", response);
+                        
+                        // Verify payment
+                        const verificationResponse = await fetch('http://localhost:3000/api/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+                        
+                        const verification = await verificationResponse.json();
+                        
+                        if (verification.success) {
+                            // Save booking
+                            bookingData.status = 'paid';
+                            bookingData.payment_id = response.razorpay_payment_id;
+                            
+                            const saveResponse = await fetch('http://localhost:3000/api/bookings', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(bookingData)
+                            });
+                            
+                            if (saveResponse.ok) {
+                                alert('Payment successful! Booking confirmed.');
+                                window.location.reload();
+                            } else {
+                                alert('Booking saved but confirmation failed');
+                            }
+                        } else {
+                            alert('Payment verification failed');
+                        }
+                    },
+                    prefill: {
+                        name: bookingData.name,
+                        contact: bookingData.mobile,
+                        email: 'customer@example.com'
+                    },
+                    theme: {
+                        color: '#d35400'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            alert('Payment window closed');
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Payment failed: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
